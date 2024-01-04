@@ -1,15 +1,23 @@
 import Phaser from "phaser"
 import {processPos, roll, move} from "../../lib/SnakeAndLadders.js"
+import delay from "../../lib/util.js"
 
 const squarePos = {
-   x: 415,
-   y: 565,
+   x: 260,
+   y: 720,
 }
+
+const tileWidth = 155
 
 let curerntTurn = 0
 let currentPawn = undefined
 
 let playerPos = [1,1]
+let playerCoords = [
+   {x: 1, y: 1},
+   {x: 1, y: 1}
+]
+
 let winner = undefined
 
 const calculateMovement = (pos) => {
@@ -21,7 +29,41 @@ const calculateMovement = (pos) => {
       returnTiles = {x: 4, y: pos-maxTiles}
    }
 
+   console.log(returnTiles)
    return returnTiles
+}
+
+const moveTo = (pawn, finalPos) => {
+   let ElevatedTiles = [5, 9, 13]
+   let Elevated = 0
+   let direction = 1
+
+   while (playerPos[curerntTurn] != finalPos) {
+      playerPos[curerntTurn] = move(playerPos[curerntTurn], 1)
+
+      const currentPos = playerPos[curerntTurn]
+
+      if (ElevatedTiles.find((element) => element == currentPos)) {
+         Elevated += 1
+         direction *= -1
+
+         playerCoords[curerntTurn].y += 1
+         console.log(`Changing direction to ${direction}`)
+      } else {
+         playerCoords[curerntTurn].x += direction
+         console.log(playerCoords[curerntTurn].x)
+      }
+
+      const newX = squarePos.x + (tileWidth * playerCoords[curerntTurn].x)
+      const newY = squarePos.y - (tileWidth * playerCoords[curerntTurn].y)
+
+      console.log(`Moving to coords X: ${playerCoords[curerntTurn].x} Y: ${playerCoords[curerntTurn].y}`)
+      currentPawn.setPosition(newX, newY)
+
+      //await delay(50)
+   }
+
+   console.log(`LOOP COMPLETED: ${playerPos[curerntTurn]}`)
 }
 
 export default class MainGameScene extends Phaser.Scene {
@@ -40,9 +82,18 @@ export default class MainGameScene extends Phaser.Scene {
  create() {
    this.add.image(0,0,"gameBG").setOrigin(0,0)
 
-   const redPawn = this.add.image(squarePos.x, squarePos.y, "redPawn").setOrigin(0,0)
-   const greenPawn = this.add.image(squarePos.x, squarePos.y, "greenPawn").setOrigin(0,0)
-   //const greenPawn = this.add.image(squarePos.x + 40, squarePos.y, "greenPawn").setOrigin(0,0)
+   const x = squarePos.x + (tileWidth * playerCoords[curerntTurn].x)
+   const y = squarePos.y - (tileWidth * playerCoords[curerntTurn].y)
+
+   const redPawn = this.add.image(x, y, "redPawn")
+   redPawn.name = "redPawn"
+   redPawn.setOrigin(0,0)
+
+   const greenPawn = this.add.image(x, y, "greenPawn")
+      //const greenPawn = this.add.image(squarePos.x + 40, squarePos.y, "greenPawn").setOrigin(0,0)
+   greenPawn.name = "greenPawn"
+   greenPawn.setOrigin(0,0)
+
    currentPawn = redPawn
 
    const rollImage = this.add.image(1146,655,"roll").setOrigin(0,0)
@@ -61,16 +112,18 @@ export default class MainGameScene extends Phaser.Scene {
       const nextPos = move(playerPos[curerntTurn], rolledNumber)
       console.log(`${curerntTurn} moving to ${nextPos}`)
 
-      const calculatedTiles = calculateMovement(nextPos)
-      currentPawn.setPosition(squarePos.x + (155 * calculatedTiles.x), squarePos.y - (155 * calculatedTiles.y))
-      console.log(squarePos.x + (155 * calculatedTiles.x), squarePos.y - (155 * calculatedTiles.y))
+      moveTo(currentPawn, nextPos)
+
+      /*const calculatedTiles = calculateMovement(nextPos)
+      currentPawn.setPosition((tileWidth * calculatedTiles.x), squarePos.y - (tileWidth * calculatedTiles.y))
+      console.log((tileWidth * calculatedTiles.x), squarePos.y - (tileWidth * calculatedTiles.y))*/
 
       const processedPos = processPos(nextPos)
       playerPos[curerntTurn] = processedPos
       console.log(`${curerntTurn} Processing to ${processedPos}`)
 
-      const calculatedTiles2 = calculateMovement(processedPos)
-      currentPawn.setPosition(squarePos.x + (155 * calculatedTiles2.x), squarePos.y - (155 * calculatedTiles2.y))
+      /*const calculatedTiles2 = calculateMovement(processedPos)
+      currentPawn.setPosition((tileWidth * calculatedTiles2.x), squarePos.y - (tileWidth * calculatedTiles2.y))*/
 
       if (processedPos == 16) {
          winner = curerntTurn
