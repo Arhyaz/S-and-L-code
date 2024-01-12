@@ -1,6 +1,8 @@
 import Phaser from "phaser"
 import {processPos, roll, move} from "../../lib/SnakeAndLadders.js"
+
 import delay from "../../lib/util.js"
+import bezierCurve from "../../lib/bezierCurve.js"
 
 const squarePos = {
    x: 260,
@@ -18,25 +20,62 @@ let playerCoords = [
    {x: 1, y: 1}
 ]
 
+let playerDirections = [
+   1,
+   1
+]
+
 let winner = undefined
 
-const calculateMovement = (pos) => {
-   const maxTiles = 4
-   let returnTiles = {x: pos, y: 0}
+const setTo = async (game, finalPos) => {
+   console.log("Settting position", finalPos)
 
-
-   if (pos > maxTiles) {
-      returnTiles = {x: 4, y: pos-maxTiles}
-   }
-
-   console.log(returnTiles)
-   return returnTiles
-}
-
-const moveTo = (pawn, finalPos) => {
    let ElevatedTiles = [5, 9, 13]
    let Elevated = 0
-   let direction = 1
+
+   let currentPos = 1
+   let currentDirection = 1
+   let currentX = 1
+   let currentY = 1
+
+   while (currentPos != finalPos) {
+      currentPos += 1
+
+      if (ElevatedTiles.find((element) => element == currentPos)) {
+         Elevated += 1
+         currentDirection *= -1
+
+         currentY += 1
+      } else {
+         currentX += currentDirection
+         console.log(currentX)
+      }
+
+      console.log(`Setting to coords X: ${currentX} Y: ${currentY}`)
+   }
+
+   console.log(`SET LOOP COMPLETED: ${currentPos}`)
+
+   const newX = squarePos.x + (tileWidth * currentX)
+   const newY = squarePos.y - (tileWidth * currentY)
+
+   playerDirections[curerntTurn] = currentDirection
+   playerPos[curerntTurn] = currentPos
+   playerCoords[curerntTurn].x = currentX
+   playerCoords[curerntTurn].y = currentY
+   
+   game.tweens.add({
+      targets: currentPawn,
+      x: newX,
+      y: newY,
+      duration: 400
+   })
+
+}
+
+const moveTo = async (game, finalPos) => {
+   let ElevatedTiles = [5, 9, 13]
+   let Elevated = 0
 
    while (playerPos[curerntTurn] != finalPos) {
       playerPos[curerntTurn] = move(playerPos[curerntTurn], 1)
@@ -45,12 +84,11 @@ const moveTo = (pawn, finalPos) => {
 
       if (ElevatedTiles.find((element) => element == currentPos)) {
          Elevated += 1
-         direction *= -1
+         playerDirections[curerntTurn] *= -1
 
          playerCoords[curerntTurn].y += 1
-         console.log(`Changing direction to ${direction}`)
       } else {
-         playerCoords[curerntTurn].x += direction
+         playerCoords[curerntTurn].x += playerDirections[curerntTurn]
          console.log(playerCoords[curerntTurn].x)
       }
 
@@ -58,9 +96,15 @@ const moveTo = (pawn, finalPos) => {
       const newY = squarePos.y - (tileWidth * playerCoords[curerntTurn].y)
 
       console.log(`Moving to coords X: ${playerCoords[curerntTurn].x} Y: ${playerCoords[curerntTurn].y}`)
-      currentPawn.setPosition(newX, newY)
 
-      //await delay(50)
+      game.tweens.add({
+         targets: currentPawn,
+         x: newX,
+         y: newY,
+         duration: 400
+      })
+
+      await delay(500)
    }
 
    console.log(`LOOP COMPLETED: ${playerPos[curerntTurn]}`)
@@ -89,8 +133,7 @@ export default class MainGameScene extends Phaser.Scene {
    redPawn.name = "redPawn"
    redPawn.setOrigin(0,0)
 
-   const greenPawn = this.add.image(x, y, "greenPawn")
-      //const greenPawn = this.add.image(squarePos.x + 40, squarePos.y, "greenPawn").setOrigin(0,0)
+   const greenPawn = this.add.image(x+40, y, "greenPawn")
    greenPawn.name = "greenPawn"
    greenPawn.setOrigin(0,0)
 
@@ -100,10 +143,12 @@ export default class MainGameScene extends Phaser.Scene {
    rollImage.scale = .4
    rollImage.setInteractive( { useHandCursor: true  } );
 
-   rollImage.on("pointerup", () => {
+   rollImage.on("pointerup", async () => {
       if (winner) {
          console.log("Game is over bucko")
          return
+      } else {
+         console.log(`No winner yet ${winner}`)
       }
 
       const rolledNumber = roll()
@@ -112,21 +157,20 @@ export default class MainGameScene extends Phaser.Scene {
       const nextPos = move(playerPos[curerntTurn], rolledNumber)
       console.log(`${curerntTurn} moving to ${nextPos}`)
 
-      moveTo(currentPawn, nextPos)
-
-      /*const calculatedTiles = calculateMovement(nextPos)
-      currentPawn.setPosition((tileWidth * calculatedTiles.x), squarePos.y - (tileWidth * calculatedTiles.y))
-      console.log((tileWidth * calculatedTiles.x), squarePos.y - (tileWidth * calculatedTiles.y))*/
+      await moveTo(this, nextPos)
 
       const processedPos = processPos(nextPos)
-      playerPos[curerntTurn] = processedPos
-      console.log(`${curerntTurn} Processing to ${processedPos}`)
+
+      if (nextPos != processedPos) {
+         console.log(`${curerntTurn} Processing to ${processedPos}`)
+         setTo(this, processedPos)
+      }
 
       /*const calculatedTiles2 = calculateMovement(processedPos)
       currentPawn.setPosition((tileWidth * calculatedTiles2.x), squarePos.y - (tileWidth * calculatedTiles2.y))*/
 
       if (processedPos == 16) {
-         winner = curerntTurn
+         winner = currentPawn
          console.log(`${winner} WON!!`)
          return
       }
