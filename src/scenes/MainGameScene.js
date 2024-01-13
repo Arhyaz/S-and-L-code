@@ -27,6 +27,16 @@ let playerDirections = [
 
 let winner = undefined
 
+const rollingDieVisual = async(rolledNumber, die) => {
+   for(let i=0; i<25; i++) {
+      const randomRoll = roll()
+      die.setTexture(`die${randomRoll}`)
+      await delay(65)
+   }
+
+   die.setTexture(`die${rolledNumber}`)
+}
+
 const setTo = async (game, finalPos) => {
    console.log("Settting position", finalPos)
 
@@ -116,8 +126,12 @@ export default class MainGameScene extends Phaser.Scene {
  }
 
  preload() {
-   this.load.image("playerBar_right", "gui/player bar kanan.png")
-   this.load.image("playerBar_left", "gui/player bar kiri.png")
+   for (let i=1; i<7; i++) {
+      this.load.image(`die${i}`, `gui/dice/${i} die.png`)
+   }
+
+   this.load.image("playerBar_right", "gui/playerBar/player bar kanan.png")
+   this.load.image("playerBar_left", "gui/playerBar/player bar kiri.png")
 
    this.load.image("roll", "images/logo logo game/3.png")
    this.load.image("gameBG", "images/gamr bg.png")
@@ -136,6 +150,9 @@ export default class MainGameScene extends Phaser.Scene {
 
    const x = squarePos.x + (tileWidth * playerCoords[curerntTurn].x)
    const y = squarePos.y - (tileWidth * playerCoords[curerntTurn].y)
+
+   const die = this.add.image(1116, 461, "die1")
+   die.setOrigin(0,0)
 
    const redPawn = this.add.image(x, y, "redPawn")
    redPawn.name = "redPawn"
@@ -162,9 +179,10 @@ export default class MainGameScene extends Phaser.Scene {
       const rolledNumber = roll()
       console.log(`${curerntTurn} landed roll ${rolledNumber}`)
 
+      await rollingDieVisual(rolledNumber, die)
+
       const nextPos = move(playerPos[curerntTurn], rolledNumber)
       console.log(`${curerntTurn} moving to ${nextPos}`)
-
       await moveTo(this, nextPos)
 
       const processedPos = processPos(nextPos)
@@ -173,9 +191,6 @@ export default class MainGameScene extends Phaser.Scene {
          console.log(`${curerntTurn} Processing to ${processedPos}`)
          setTo(this, processedPos)
       }
-
-      /*const calculatedTiles2 = calculateMovement(processedPos)
-      currentPawn.setPosition((tileWidth * calculatedTiles2.x), squarePos.y - (tileWidth * calculatedTiles2.y))*/
 
       if (processedPos == 16) {
          winner = currentPawn
