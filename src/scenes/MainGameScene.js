@@ -116,15 +116,23 @@ export default class MainGameScene extends Phaser.Scene {
  }
 
  preload() {
-    this.load.image("roll", "images/logo logo game/3.png")
-    this.load.image("gameBG", "images/gamr bg.png")
+   this.load.image("playerBar_right", "gui/player bar kanan.png")
+   this.load.image("playerBar_left", "gui/player bar kiri.png")
 
-    this.load.image("redPawn", "sprites/red_pawn.png")
-    this.load.image("greenPawn", "sprites/green_pawn.png")
+   this.load.image("roll", "images/logo logo game/3.png")
+   this.load.image("gameBG", "images/gamr bg.png")
+
+   this.load.image("redPawn", "sprites/red_pawn.png")
+   this.load.image("greenPawn", "sprites/green_pawn.png")
  }
 
  create() {
    this.add.image(0,0,"gameBG").setOrigin(0,0)
+
+   const playerBar = this.add.image(41, 691, "playerBar_right")
+   playerBar.setOrigin(0,0)
+   playerBar.setAngle(-90)
+   playerBar.setScale(0.4)
 
    const x = squarePos.x + (tileWidth * playerCoords[curerntTurn].x)
    const y = squarePos.y - (tileWidth * playerCoords[curerntTurn].y)
@@ -177,10 +185,14 @@ export default class MainGameScene extends Phaser.Scene {
 
       if (curerntTurn == 0) {
          curerntTurn = 1
+
          currentPawn = greenPawn
+         playerBar.setTexture("playerBar_left")
       } else {
          curerntTurn = 0
+
          currentPawn = redPawn
+         playerBar.setTexture("playerBar_right")
       }
    })
  }
