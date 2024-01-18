@@ -221,14 +221,6 @@ export default class MainGameScene extends Phaser.Scene {
       if (debounce) {return}
       debounce = true
 
-      // question
-      const result = await waitAnswer(this)
-      
-      if (result == false) {
-         debounce = false
-         return
-      }
-
       // roll number
       const rolledNumber = roll()
       await rollingDieVisual(rolledNumber, die)
@@ -240,9 +232,18 @@ export default class MainGameScene extends Phaser.Scene {
       // process position
       const processedPos = processPos(nextPos)
 
-      if (nextPos != processedPos) {
-         console.log(`${curerntTurn} Processing to ${processedPos}`)
-         setTo(this, processedPos)
+      if (nextPos > processedPos) { // snake
+         const result = await waitAnswer(this)
+
+         if (result == false) {
+            setTo(this, processedPos)
+         }
+      } else if (nextPos < processedPos) { // ladder
+         const result = await waitAnswer(this)
+
+         if (result == true) {
+            setTo(this, processedPos)
+         }
       }
 
       // check winner
