@@ -232,13 +232,13 @@ export default class MainGameScene extends Phaser.Scene {
       // process position
       const processedPos = processPos(nextPos)
 
-      if (nextPos > processedPos) { // snake
+      if (nextPos != 16 && nextPos > processedPos) { // snake
          const result = await waitAnswer(this)
 
          if (result == false) {
             setTo(this, processedPos)
          }
-      } else if (nextPos < processedPos) { // ladder
+      } else if (nextPos != 16 && nextPos < processedPos) { // ladder
          const result = await waitAnswer(this)
 
          if (result == true) {
