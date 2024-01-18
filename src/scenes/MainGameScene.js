@@ -4,18 +4,8 @@ import {processPos, roll, move, giveQuestion} from "../../lib/SnakeAndLadders.js
 import delay from "../../lib/util.js"
 
 const question_answers = [
-   true,
-   false,
-   true,
-   false,
-   false,
-   false,
-   true,
-   false,
-   true,
-   false,
+   true, false, true, false, false, false, true, false, true, false,
 ]
-
 
 const squarePos = {
    x: 260,
@@ -162,9 +152,10 @@ export default class MainGameScene extends Phaser.Scene {
       this.load.image(`question${i}`, `gui/Questions/Question ${i}.png`)
    }
 
-   for (let i=1; i<3; i++) {
-      this.load.image(`victory${i}`, `gui/victory logos/victory player ${i}.png`)
-   } 
+   this.load.image("black", "images/black.png")
+
+   this.load.image("victory1", "gui/victory logos/victory player 1.png")
+   this.load.image("victory2", "gui/victory logos/victory player 2.png")
 
    this.load.image("true button", "gui/Questions/True button.png")
    this.load.image("false button", "gui/Questions/False button.png")
@@ -252,6 +243,14 @@ export default class MainGameScene extends Phaser.Scene {
       if (processedPos == 16) {
          winner = currentPawn
          console.log(`${winner} WON!!`)
+
+         const blackScreen = this.add.image(0,0,"black")
+         blackScreen.setOrigin(0,0)
+         blackScreen.setAlpha(.8)
+
+         const victory = this.add.image(161, 161, `victory${curerntTurn+1}`)
+         victory.setOrigin(0,0)
+
          return
       }
 
