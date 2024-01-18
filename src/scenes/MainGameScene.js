@@ -1,8 +1,21 @@
 import Phaser from "phaser"
-import {processPos, roll, move} from "../../lib/SnakeAndLadders.js"
+import {processPos, roll, move, giveQuestion} from "../../lib/SnakeAndLadders.js"
 
 import delay from "../../lib/util.js"
-import bezierCurve from "../../lib/bezierCurve.js"
+
+const question_answers = [
+   true,
+   false,
+   true,
+   false,
+   false,
+   false,
+   true,
+   false,
+   true,
+   false,
+]
+
 
 const squarePos = {
    x: 260,
@@ -13,6 +26,7 @@ const tileWidth = 155
 
 let curerntTurn = 0
 let currentPawn = undefined
+let debounce = false
 
 let playerPos = [1,1]
 let playerCoords = [
@@ -120,15 +134,40 @@ const moveTo = async (game, finalPos) => {
    console.log(`LOOP COMPLETED: ${playerPos[curerntTurn]}`)
 }
 
+const waitAnswer = async (game) => {
+   return new Promise((resolve) => {
+      giveQuestion(game, (answer, question) => {
+         if (answer == question_answers[question-1]) {
+            resolve(true)
+        } else {
+            console.log("Answer is incorrect")
+            resolve(false)
+        }
+      })
+   })
+}
+
 export default class MainGameScene extends Phaser.Scene {
  constructor() {
   super("MainGame")
  }
 
  preload() {
+   // gui
    for (let i=1; i<7; i++) {
       this.load.image(`die${i}`, `gui/dice/${i} die.png`)
    }
+
+   for (let i=1; i<11; i++) {
+      this.load.image(`question${i}`, `gui/Questions/Question ${i}.png`)
+   }
+
+   for (let i=1; i<3; i++) {
+      this.load.image(`victory${i}`, `gui/victory logos/victory player ${i}.png`)
+   } 
+
+   this.load.image("true button", "gui/Questions/True button.png")
+   this.load.image("false button", "gui/Questions/False button.png")
 
    this.load.image("playerBar_right", "gui/playerBar/player bar kanan.png")
    this.load.image("playerBar_left", "gui/playerBar/player bar kiri.png")
@@ -136,6 +175,7 @@ export default class MainGameScene extends Phaser.Scene {
    this.load.image("roll", "images/logo logo game/3.png")
    this.load.image("gameBG", "images/gamr bg.png")
 
+   // image
    this.load.image("redPawn", "sprites/red_pawn.png")
    this.load.image("greenPawn", "sprites/green_pawn.png")
  }
@@ -169,6 +209,7 @@ export default class MainGameScene extends Phaser.Scene {
    rollImage.setInteractive( { useHandCursor: true  } );
 
    rollImage.on("pointerup", async () => {
+      // check winner
       if (winner) {
          console.log("Game is over bucko")
          return
@@ -176,15 +217,27 @@ export default class MainGameScene extends Phaser.Scene {
          console.log(`No winner yet ${winner}`)
       }
 
-      const rolledNumber = roll()
-      console.log(`${curerntTurn} landed roll ${rolledNumber}`)
+      // check cooldown
+      if (debounce) {return}
+      debounce = true
 
+      // question
+      const result = await waitAnswer(this)
+      
+      if (result == false) {
+         debounce = false
+         return
+      }
+
+      // roll number
+      const rolledNumber = roll()
       await rollingDieVisual(rolledNumber, die)
 
+      // move position
       const nextPos = move(playerPos[curerntTurn], rolledNumber)
-      console.log(`${curerntTurn} moving to ${nextPos}`)
       await moveTo(this, nextPos)
 
+      // process position
       const processedPos = processPos(nextPos)
 
       if (nextPos != processedPos) {
@@ -192,12 +245,14 @@ export default class MainGameScene extends Phaser.Scene {
          setTo(this, processedPos)
       }
 
+      // check winner
       if (processedPos == 16) {
          winner = currentPawn
          console.log(`${winner} WON!!`)
          return
       }
 
+      // change turns
       if (curerntTurn == 0) {
          curerntTurn = 1
 
@@ -209,6 +264,8 @@ export default class MainGameScene extends Phaser.Scene {
          currentPawn = redPawn
          playerBar.setTexture("playerBar_right")
       }
+
+      debounce = false // turn off cooldown*/
    })
  }
 
