@@ -31,8 +31,57 @@ let playerDirections = [
 
 let winner = undefined
 
+const shackingDieVisual = async(game, die) => {
+   const high = 161
+   const low  = 361
+   const base = 461
+
+   let current = "low"
+
+   await delay(320)
+
+   for(let i=0; i<18; i++) {
+      if (current == "low") {
+         console.log("low")
+
+         game.tweens.add({
+            targets: die,
+            y: low,
+            duration: 70
+         })
+      } else {  
+         console.log("high")
+
+         game.tweens.add({
+            targets: die,
+            y: high,
+            duration: 70
+         })
+      }
+
+      if (current == "low") {
+         current = "high"
+      } else {
+         current = "low"
+      }
+
+      await delay(100)
+   }
+
+   await delay(350)
+
+   game.tweens.add({
+      targets: die,
+      y: base,
+      duration: 100,
+      ease: 'Back.In',
+   })
+
+   console.log("base")
+}
+
 const rollingDieVisual = async(rolledNumber, die) => {
-   for(let i=0; i<25; i++) {
+   for(let i=0; i<15; i++) {
       const randomRoll = roll()
       die.setTexture(`die${randomRoll}`)
       await delay(65)
@@ -143,6 +192,11 @@ export default class MainGameScene extends Phaser.Scene {
  }
 
  preload() {
+   // sfx
+   this.load.audio("victory", "sfx/victory.mp3")
+   this.load.audio("die roll", "sfx/die roll.mp3")
+   this.load.audio("click", "sfx/click.mp3")
+
    // gui
    for (let i=1; i<7; i++) {
       this.load.image(`die${i}`, `gui/dice/${i} die.png`)
@@ -213,6 +267,16 @@ export default class MainGameScene extends Phaser.Scene {
       debounce = true
 
       // roll number
+      const clickSfx = this.sound.add("click")
+      clickSfx.play()
+
+      const rollSfx = this.sound.add("die roll")
+      rollSfx.play()
+
+      shackingDieVisual(this, die)
+
+      await delay(2600)
+
       const rolledNumber = roll()
       await rollingDieVisual(rolledNumber, die)
 
@@ -243,6 +307,9 @@ export default class MainGameScene extends Phaser.Scene {
       if (processedPos == 16) {
          winner = currentPawn
          console.log(`${winner} WON!!`)
+
+         const victorySfx = this.sound.add("victory")
+         victorySfx.play()
 
          const blackScreen = this.add.image(0,0,"black")
          blackScreen.setOrigin(0,0)
