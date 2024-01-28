@@ -17,6 +17,7 @@ const tileWidth = 155
 let curerntTurn = 0
 let currentPawn = undefined
 let debounce = false
+let mute = false
 
 let playerPos = [1,1]
 let playerCoords = [
@@ -186,6 +187,25 @@ const waitAnswer = async (game) => {
    })
 }
 
+const resetValues = () => {
+   curerntTurn = 0
+   currentPawn = undefined
+   debounce = false
+
+   playerPos = [1,1]
+   playerCoords = [
+      {x: 1, y: 1},
+      {x: 1, y: 1}
+   ]
+
+   playerDirections = [
+      1,
+      1
+   ]
+
+   winner = undefined
+}
+
 export default class MainGameScene extends Phaser.Scene {
  constructor() {
   super("MainGame")
@@ -196,6 +216,7 @@ export default class MainGameScene extends Phaser.Scene {
    this.load.audio("victory", "sfx/victory.mp3")
    this.load.audio("die roll", "sfx/die roll.mp3")
    this.load.audio("click", "sfx/click.mp3")
+   this.load.audio("bgMusic", "sfx/bgMusic.mp3")
 
    // gui
    for (let i=1; i<7; i++) {
@@ -205,6 +226,11 @@ export default class MainGameScene extends Phaser.Scene {
    for (let i=1; i<11; i++) {
       this.load.image(`question${i}`, `gui/Questions/Question ${i}.png`)
    }
+
+   this.load.image("mute", "gui/buttons left bottom/3.png")
+   this.load.image("unmute", "gui/buttons left bottom/4.png")
+   this.load.image("home", "gui/buttons left bottom/5.png")
+   this.load.image("replay", "gui/play again/play again.png")
 
    this.load.image("black", "images/black.png")
 
@@ -226,7 +252,47 @@ export default class MainGameScene extends Phaser.Scene {
  }
 
  create() {
+   this.sound.pauseOnBlur = false
+
+   const clickSfx = this.sound.add("click")
+
+   const bgMusic = this.sound.add("bgMusic", { loop: true, })
+   bgMusic.play()
+
    this.add.image(0,0,"gameBG").setOrigin(0,0)
+
+   const homeButton = this.add.image(60, 36, "home")
+   homeButton.setOrigin(0,0)
+   homeButton.setInteractive( { useHandCursor: true } )
+
+   homeButton.on("pointerup", () => {
+      clickSfx.play()
+      bgMusic.stop()
+      resetValues
+      this.scene.start("MainMenu")
+   })
+
+   const muteButton = this.add.image(65, 662, "unmute")
+   muteButton.setOrigin(0,0)
+   muteButton.setInteractive( { useHandCursor: true  } )
+
+   muteButton.on("pointerup", () => {
+      clickSfx.play()
+
+      if (mute == false) {
+         console.log("Muting")
+         mute = true
+
+         muteButton.setTexture("mute")
+         bgMusic.stop()
+      } else {
+         console.log("Unmutting")
+         mute = false
+
+         muteButton.setTexture("unmute")
+         bgMusic.play()
+      }
+   })
 
    const playerBar = this.add.image(41, 691, "playerBar_right")
    playerBar.setOrigin(0,0)
@@ -267,7 +333,6 @@ export default class MainGameScene extends Phaser.Scene {
       debounce = true
 
       // roll number
-      const clickSfx = this.sound.add("click")
       clickSfx.play()
 
       const rollSfx = this.sound.add("die roll")
@@ -301,6 +366,22 @@ export default class MainGameScene extends Phaser.Scene {
          }
       } else if (nextPos > 16) {
          setTo(this, processedPos)
+
+         const newProcessedPos = processPos(nextPos)
+
+         if (nextPos < 16 && nextPos > newProcessedPos) { // snake
+            const result = await waitAnswer(this)
+   
+            if (result == false) {
+               setTo(this, processedPos)
+            }
+         } else if (nextPos < 16 && nextPos < newProcessedPos) { // ladder
+            const result = await waitAnswer(this)
+   
+            if (result == true) {
+               setTo(this, processedPos)
+            }
+         }
       }
 
       // check winner
@@ -317,6 +398,15 @@ export default class MainGameScene extends Phaser.Scene {
 
          const victory = this.add.image(161, 161, `victory${curerntTurn+1}`)
          victory.setOrigin(0,0)
+
+         const replay = this.add.image(529, 618, "replay")
+         replay.setOrigin(0,0)
+         replay.setInteractive( { useHandCursor: true  } )
+         
+         replay.on("pointerup", () => {
+            resetValues()
+            this.scene.restart()
+         })
 
          return
       }
