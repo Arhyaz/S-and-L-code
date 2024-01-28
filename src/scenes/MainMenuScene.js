@@ -28,6 +28,8 @@ export default class MainMenuScene extends Phaser.Scene {
  
 
  create() {
+    this.sound.pauseOnBlur = false
+
     const sound = this.sound.add("click")
 
     this.add.image(0,0,"MainMenu BG").setOrigin(0,0)
