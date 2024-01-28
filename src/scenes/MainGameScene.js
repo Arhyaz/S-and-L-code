@@ -194,6 +194,10 @@ const moveTo = async (game, finalPos) => {
       await delay(500)
    }
 
+   if (movingBackward) {
+      playerDirections[curerntTurn] *= -1
+   }
+
    console.log(`LOOP COMPLETED: ${playerPos[curerntTurn]}`)
 }
 
