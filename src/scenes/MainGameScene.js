@@ -43,16 +43,12 @@ const shackingDieVisual = async(game, die) => {
 
    for(let i=0; i<18; i++) {
       if (current == "low") {
-         console.log("low")
-
          game.tweens.add({
             targets: die,
             y: low,
             duration: 70
          })
       } else {  
-         console.log("high")
-
          game.tweens.add({
             targets: die,
             y: high,
@@ -139,21 +135,48 @@ const setTo = async (game, finalPos) => {
 
 const moveTo = async (game, finalPos) => {
    let ElevatedTiles = [5, 9, 13]
+   let deElevateTiles = [4, 8, 12]
+   let movingBackward = false
    let Elevated = 0
 
    while (playerPos[curerntTurn] != finalPos) {
-      playerPos[curerntTurn] = move(playerPos[curerntTurn], 1)
-
+      if (!movingBackward) {
+         playerPos[curerntTurn] = move(playerPos[curerntTurn], 1)
+      } else {
+         playerPos[curerntTurn] = move(playerPos[curerntTurn], -1)
+         console.log( playerPos[curerntTurn])
+      }
+      
       const currentPos = playerPos[curerntTurn]
 
-      if (ElevatedTiles.find((element) => element == currentPos)) {
+      if (ElevatedTiles.find((element) => element == currentPos) && !movingBackward) {
          Elevated += 1
          playerDirections[curerntTurn] *= -1
 
          playerCoords[curerntTurn].y += 1
+      } else if (deElevateTiles.find((element) => element == currentPos) && movingBackward ) {
+         Elevated -= 1
+         playerDirections[curerntTurn] *= -1
+
+         playerCoords[curerntTurn].y -= 1
       } else {
          playerCoords[curerntTurn].x += playerDirections[curerntTurn]
-         console.log(playerCoords[curerntTurn].x)
+         
+         if ( playerCoords[curerntTurn].x < 1) { // going past the finish line
+            console.log("Going past finsh line")
+
+            const difference = finalPos-16
+            finalPos = 16-difference
+
+            console.log(`New final pos is ${finalPos}`)
+
+            movingBackward = true
+            playerPos[curerntTurn] = move(playerPos[curerntTurn], -2)
+
+            playerDirections[curerntTurn] = 1
+            playerCoords[curerntTurn].x += 2
+         }
+   
       }
 
       const newX = squarePos.x + (tileWidth * playerCoords[curerntTurn].x)
@@ -346,8 +369,13 @@ export default class MainGameScene extends Phaser.Scene {
       await rollingDieVisual(rolledNumber, die)
 
       // move position
-      const nextPos = move(playerPos[curerntTurn], rolledNumber)
+      let nextPos = move(playerPos[curerntTurn], rolledNumber)
       await moveTo(this, nextPos)
+
+      if (nextPos > 16) {
+         const difference = nextPos-16
+         nextPos = 16-difference
+      }
 
       // process position
       const processedPos = processPos(nextPos)
@@ -363,24 +391,6 @@ export default class MainGameScene extends Phaser.Scene {
 
          if (result == true) {
             setTo(this, processedPos)
-         }
-      } else if (nextPos > 16) {
-         setTo(this, processedPos)
-
-         const newProcessedPos = processPos(nextPos)
-
-         if (nextPos < 16 && nextPos > newProcessedPos) { // snake
-            const result = await waitAnswer(this)
-   
-            if (result == false) {
-               setTo(this, processedPos)
-            }
-         } else if (nextPos < 16 && nextPos < newProcessedPos) { // ladder
-            const result = await waitAnswer(this)
-   
-            if (result == true) {
-               setTo(this, processedPos)
-            }
          }
       }
 
