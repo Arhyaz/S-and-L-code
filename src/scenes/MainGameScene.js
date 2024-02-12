@@ -1,5 +1,5 @@
 import Phaser from "phaser"
-import {processPos, roll, move, giveQuestion} from "../../lib/SnakeAndLadders.js"
+import {processPos, roll, move, giveQuestion, moveArm, pinchArm, unPinchArm} from "../../lib/SnakeAndLadders.js"
 
 import delay from "../../lib/util.js"
 
@@ -372,9 +372,16 @@ export default class MainGameScene extends Phaser.Scene {
       const rolledNumber = roll()
       await rollingDieVisual(rolledNumber, die)
 
+      // move arm to starting pos
+      await moveArm(curerntTurn, playerPos[curerntTurn])
+      await pinchArm()
+
       // move position
       let nextPos = move(playerPos[curerntTurn], rolledNumber)
       await moveTo(this, nextPos)
+
+      // move arm to target pos
+      await moveArm(curerntTurn, playerPos[curerntTurn])
 
       if (nextPos > 16) {
          const difference = nextPos-16
@@ -388,15 +395,21 @@ export default class MainGameScene extends Phaser.Scene {
          const result = await waitAnswer(this)
 
          if (result == false) {
-            setTo(this, processedPos)
+            await setTo(this, processedPos)
+            // move arm to processed pos
+            await moveArm(curerntTurn, playerPos[curerntTurn])
          }
       } else if (nextPos < 16 && nextPos < processedPos) { // ladder
          const result = await waitAnswer(this)
 
          if (result == true) {
-            setTo(this, processedPos)
+            await setTo(this, processedPos)
+            // move arm to processed pos
+            await moveArm(curerntTurn, playerPos[curerntTurn])
          }
       }
+
+      await unPinchArm()
 
       // check winner
       if (processedPos == 16) {
